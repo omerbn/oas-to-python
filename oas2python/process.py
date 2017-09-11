@@ -75,6 +75,7 @@ def process_file(cmd_args):
             raise ValueError("invalid file type")
 
         defs = api_file_dict.get('definitions', {})
+        sorted_defs = []
         for name, schema in defs.items():
             import copy
 
@@ -82,6 +83,8 @@ def process_file(cmd_args):
             schema_plain = copy.deepcopy(schema)
             cl.start(schema_plain, RefCollector.set_plain)
             includes = cl.schemes
+
+            sorted_defs.append((name, cl.in_document_depends))
 
             schema_for_pjs = copy.deepcopy(schema)
             cl.start(schema_for_pjs, RefCollector.set_with_memory)
@@ -92,10 +95,14 @@ def process_file(cmd_args):
                 'includes': [k[k.rfind('/') + 1:] for k, v in includes.items()]
             }
 
+        def get_key(item):
+            return item[1]
+        sorted_defs = sorted(sorted_defs, key=get_key)
+
         with codecs.open(target_filename, 'w', 'utf-8') as fwd:
             # rendering template
             # fwd.write(template.tpl.render())
-            template.stream(refs=refs, definitions=defs).dump(fwd)
+            template.stream(refs=refs, definitions=defs, sorted_definitions=sorted_defs).dump(fwd)
 
             # if args.api_generate and False:
             #    inject_into_api()
@@ -109,6 +116,7 @@ def _get_target_filename(source_filename, target_folder):
 class RefCollector(object):
     def __init__(self):
         self.schemes = {}
+        self.in_document_depends = 0
 
     @staticmethod
     def set_plain(clsname):
@@ -129,6 +137,9 @@ class RefCollector(object):
                     clsname = v[v.rfind('/') + 1:]
                     node[k] = self.handler(clsname)
                     self.schemes[v] = 1
+
+                    if v.startswith("#/definitions/"):
+                        self.in_document_depends += 1
                 else:
                     self._rec(v)
         elif isinstance(node, list):

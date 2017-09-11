@@ -8,7 +8,6 @@ import jsonschema
 import json
 import python_jsonschema_objects as pjs
 
-
 {% for def_name, def_value in definitions.items() %}
 class {{def_name}}(object):
     _cls = None
@@ -19,12 +18,10 @@ class {{def_name}}(object):
         # SAVING SCHEME
         {{def_name}}._schema = json.loads("""{{def_value.schema}}""")
 
-
         # CREATING OBJECT
         scheme_for_pjs = json.loads("""{{def_value.schema_for_pjs}}""")
 
-        if not scheme_for_pjs.get('title', None):
-            scheme_for_pjs['title'] = "{{def_name}}"
+        scheme_for_pjs['title'] = "{{def_name}}"
         builder = pjs.ObjectBuilder(scheme_for_pjs, resolved={
             {% for include_class in def_value.includes %}
                 '{{include_class}}': {{include_class}}.schema(),
@@ -41,8 +38,8 @@ class {{def_name}}(object):
         return {{def_name}}._schema
 
     @staticmethod
-    def get_object():
-        return {{def_name}}._cls()
+    def get_object(*args):
+        return {{def_name}}._cls(*args)
 
 {% endfor %}
 
@@ -66,8 +63,8 @@ class _Resolver(object):
 
 
 # initiating all classes
-{% for def_name, def_value in definitions.items() %}
-{{def_name}}.init()
+{% for tup in sorted_definitions %}
+{{tup[0]}}.init()
 {% endfor %}
 
 

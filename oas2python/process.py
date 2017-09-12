@@ -74,13 +74,15 @@ def process_file(cmd_args):
             raise ValueError("invalid file type")
 
         defs = api_file_dict.get('definitions', {})
-        sorted_defs = [name for name, schema in defs.items()]
+        # sorted_defs = [name for name, schema in defs.items()]
+        global _nodes
+        nodes = [DepNode(name) for name, schema in defs.items()]
         for name, schema in defs.items():
             import copy
 
             cl = RefCollector()
             schema_plain = copy.deepcopy(schema)
-            cl.start(schema_plain, RefCollector.set_plain, name, sorted_defs)
+            cl.start(schema_plain, RefCollector.set_plain, nodes, DepNode.get_node(nodes, name))
             includes = cl.schemes
 
             schema_for_pjs = copy.deepcopy(schema)
@@ -91,6 +93,17 @@ def process_file(cmd_args):
                 'schema_for_pjs': json.dumps(schema_for_pjs),
                 'includes': [k[k.rfind('/') + 1:] for k, v in includes.items()]
             }
+
+        # creating sorted defs
+        sorted_defs = []
+        while len(nodes):
+            for x in nodes:
+                if x.root == 0:
+                    x.root = -1
+                    sorted_defs.append(x.name)
+                    for d in x.edges:
+                        d.root -= 1
+            nodes = [x for x in nodes if x.root != -1]
 
         with codecs.open(target_filename, 'w', 'utf-8') as fwd:
             # rendering template
@@ -106,10 +119,25 @@ def _get_target_filename(source_filename, target_folder):
     return os.path.abspath(os.path.join(target_folder, target_filename))
 
 
+class DepNode:
+    def __init__(self, name):
+        self.name = name
+        self.edges = []
+        self.root = 0
+
+    def addDependee(self, node):
+        node.root += 1
+        self.edges.append(node)
+
+    @staticmethod
+    def get_node(nodes, name) -> "DepNode":
+        return next((x for x in nodes if x.name == name), None)
+
+
 class RefCollector(object):
     def __init__(self):
         self.schemes = {}
-        self.my_ndx = -1
+        self.my_node = None
 
     @staticmethod
     def set_plain(clsname):
@@ -119,13 +147,11 @@ class RefCollector(object):
     def set_with_memory(clsname):
         return "memory:" + clsname
 
-    def start(self, node, handler, name=None, dependency_array=None):
-        if dependency_array:
-            self.my_ndx = dependency_array.index(name)
+    def start(self, node, handler, nodes=None, my_node=None):
+        self.my_node = my_node
+        self._rec(node, handler, nodes)
 
-        self._rec(node, handler, dependency_array)
-
-    def _rec(self, node, handler, dependency_array):
+    def _rec(self, node, handler, nodes):
         if isinstance(node, dict):
             for k, v in node.items():
                 if k == '$ref':
@@ -133,13 +159,11 @@ class RefCollector(object):
                     node[k] = handler(clsname)
                     self.schemes[v] = 1
 
-                    if v.startswith("#/definitions/") and dependency_array:
-                        target_ndx = dependency_array.index(clsname)
-                        if target_ndx > self.my_ndx:
-                            dependency_array.insert(self.my_ndx, dependency_array.pop(target_ndx))
-                            self.my_ndx += 1
+                    if nodes and v.startswith("#/definitions/"):
+                        target_node = DepNode.get_node(nodes, clsname)
+                        target_node.addDependee(self.my_node)
                 else:
-                    self._rec(v, handler, dependency_array)
+                    self._rec(v, handler, nodes)
         elif isinstance(node, list):
             for x in node:
-                self._rec(x, handler, dependency_array)
+                self._rec(x, handler, nodes)

@@ -7,7 +7,7 @@ setup(
     version=version,
     package_dir={'oas2python': 'oas2python'},
     packages=['oas2python'],
-    url='',
+    url='https://github.com/omerbn/oas-to-python',
     license='GNU GPL 3.0',
     author='Omer Ben-Nahum',
     author_email='bn.omer@gmail.com',

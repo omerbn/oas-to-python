@@ -34,9 +34,9 @@ class {{def_name}}(object):
         {% endfor %}
         {{def_name}}._pjs_resolved = combined
 
-        scheme_for_pjs['title'] = "{{def_name}}"
+        scheme_for_pjs['title'] = "test"
         builder = pjs.ObjectBuilder(scheme_for_pjs, resolved=combined)
-        {{def_name}}._cls = getattr(builder.build_classes(), "{{def_name}}".lower().title())
+        {{def_name}}._cls = getattr(builder.build_classes(), "Test")
 
     @staticmethod
     def validate(data):
@@ -59,7 +59,6 @@ class {{def_name}}(object):
         return {{def_name}}._cls(*args)
 
 {% endfor %}
-
 class _Resolver(object):
     _singleton = None
 
@@ -83,5 +82,3 @@ class _Resolver(object):
 {% for def in sorted_definitions %}
 {{def}}.init()
 {% endfor %}
-
-

@@ -5,7 +5,6 @@ import yaml
 import json
 import codecs
 from jinja2 import Template
-import jsonschema
 
 
 def process_file(cmd_args):
@@ -75,16 +74,14 @@ def process_file(cmd_args):
             raise ValueError("invalid file type")
 
         defs = api_file_dict.get('definitions', {})
-        sorted_defs = []
+        sorted_defs = [name for name, schema in defs.items()]
         for name, schema in defs.items():
             import copy
 
             cl = RefCollector()
             schema_plain = copy.deepcopy(schema)
-            cl.start(schema_plain, RefCollector.set_plain)
+            cl.start(schema_plain, RefCollector.set_plain, name, sorted_defs)
             includes = cl.schemes
-
-            sorted_defs.append((name, cl.in_document_depends))
 
             schema_for_pjs = copy.deepcopy(schema)
             cl.start(schema_for_pjs, RefCollector.set_with_memory)
@@ -94,10 +91,6 @@ def process_file(cmd_args):
                 'schema_for_pjs': json.dumps(schema_for_pjs),
                 'includes': [k[k.rfind('/') + 1:] for k, v in includes.items()]
             }
-
-        def get_key(item):
-            return item[1]
-        sorted_defs = sorted(sorted_defs, key=get_key)
 
         with codecs.open(target_filename, 'w', 'utf-8') as fwd:
             # rendering template
@@ -116,7 +109,7 @@ def _get_target_filename(source_filename, target_folder):
 class RefCollector(object):
     def __init__(self):
         self.schemes = {}
-        self.in_document_depends = 0
+        self.my_ndx = -1
 
     @staticmethod
     def set_plain(clsname):
@@ -126,22 +119,27 @@ class RefCollector(object):
     def set_with_memory(clsname):
         return "memory:" + clsname
 
-    def start(self, node, handler):
-        self.handler = handler
-        self._rec(node)
+    def start(self, node, handler, name=None, dependency_array=None):
+        if dependency_array:
+            self.my_ndx = dependency_array.index(name)
 
-    def _rec(self, node):
+        self._rec(node, handler, dependency_array)
+
+    def _rec(self, node, handler, dependency_array):
         if isinstance(node, dict):
             for k, v in node.items():
                 if k == '$ref':
                     clsname = v[v.rfind('/') + 1:]
-                    node[k] = self.handler(clsname)
+                    node[k] = handler(clsname)
                     self.schemes[v] = 1
 
-                    if v.startswith("#/definitions/"):
-                        self.in_document_depends += 1
+                    if v.startswith("#/definitions/") and dependency_array:
+                        target_ndx = dependency_array.index(clsname)
+                        if target_ndx > self.my_ndx:
+                            dependency_array.insert(self.my_ndx, dependency_array.pop(target_ndx))
+                            self.my_ndx += 1
                 else:
-                    self._rec(v)
+                    self._rec(v, handler, dependency_array)
         elif isinstance(node, list):
             for x in node:
-                self._rec(x)
+                self._rec(x, handler, dependency_array)

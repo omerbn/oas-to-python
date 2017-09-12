@@ -12,6 +12,8 @@ import python_jsonschema_objects as pjs
 class {{def_name}}(object):
     _cls = None
     _schema = None
+    _schema_pjs = None
+    _pjs_resolved = None
 
     @staticmethod
     def init():
@@ -19,14 +21,21 @@ class {{def_name}}(object):
         {{def_name}}._schema = json.loads("""{{def_value.schema}}""")
 
         # CREATING OBJECT
-        scheme_for_pjs = json.loads("""{{def_value.schema_for_pjs}}""")
+        {{def_name}}._schema_pjs = scheme_for_pjs = json.loads("""{{def_value.schema_for_pjs}}""")
+
+        # RESOLVING LINKS
+        combined = {
+            {% for include_class in def_value.includes %}
+                '{{include_class}}': {{include_class}}.schema_for_pjs(),
+            {% endfor %}
+        }
+        {% for include_class in def_value.includes %}
+        combined = {**combined, **{{include_class}}.pjs_resolved()}
+        {% endfor %}
+        {{def_name}}._pjs_resolved = combined
 
         scheme_for_pjs['title'] = "{{def_name}}"
-        builder = pjs.ObjectBuilder(scheme_for_pjs, resolved={
-            {% for include_class in def_value.includes %}
-                '{{include_class}}': {{include_class}}.schema(),
-            {% endfor %}
-        })
+        builder = pjs.ObjectBuilder(scheme_for_pjs, resolved=combined)
         {{def_name}}._cls = getattr(builder.build_classes(), "{{def_name}}".lower().title())
 
     @staticmethod
@@ -36,6 +45,14 @@ class {{def_name}}(object):
     @staticmethod
     def schema():
         return {{def_name}}._schema
+
+    @staticmethod
+    def schema_for_pjs():
+        return {{def_name}}._schema_pjs
+
+    @staticmethod
+    def pjs_resolved():
+        return {{def_name}}._pjs_resolved
 
     @staticmethod
     def get_object(*args):
@@ -63,8 +80,8 @@ class _Resolver(object):
 
 
 # initiating all classes
-{% for tup in sorted_definitions %}
-{{tup[0]}}.init()
+{% for def in sorted_definitions %}
+{{def}}.init()
 {% endfor %}
 
 

@@ -8,7 +8,7 @@ Generating .py files with py-objects and validators based on OAS files (YAML and
 
 __pip__:
 ```sh
-$ pip install https://github.com/omerbn/oas-to-python.git
+$ pip install git+https://github.com/omerbn/oas-to-python.git
 ```
 
 ### Usage

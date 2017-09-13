@@ -18,7 +18,7 @@ def __main__():
     __internal_run(args)
 
 
-def process_file(filename, **argv):
+def entrypoint_viacode(filename, **argv):
     args = Namespace()
     setattr(args, 'filename', filename)
     setattr(args, 'target_folder', argv.get('target_folder', ""))

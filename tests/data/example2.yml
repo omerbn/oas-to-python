@@ -1,0 +1,236 @@
+definitions:
+
+  Gender:
+    type: string
+    enum: [UNKNOWN,MALE,FEMALE]
+
+  DOB:
+    allOf:
+      - $ref: "models:common/Timestamp"
+      - properties:
+          age:
+            type: number
+            format: float
+    additionalProperties: false
+
+  Education:
+    type: object
+    properties:
+        text:
+          type: string
+        institute:
+          $ref: "models:object/ObjectRef"
+        field:
+          type: string
+        start:
+          $ref: "models:common/Timestamp"
+        end:
+          $ref: "models:common/Timestamp"
+        entitled:
+          type: boolean
+        degree:
+          type: string
+          enum: [NONE, BA, BSC, MA, MSC, MBA, PHD, MD]
+    additionalProperties: false
+
+  Person:
+    title: Acurerate Person Object
+    allOf:
+      - $ref: "models:object/Object"
+      - properties:
+          gender:
+            $ref: "#/definitions/Gender"
+          first_name:
+            type: string
+          last_name:
+            type: string
+          middle_name:
+            type: string
+          full_name:
+            type: string
+          phones:
+            type: array
+            items:
+              type: string
+          photos:
+            type: array
+            items:
+              $ref: "models:common/Photo"
+          business_reason:
+            type: string # maybe redundant?
+          social:
+            type: array
+            items:
+              $ref: "models:common/Social"
+          addresses:
+            type: array
+            items:
+              $ref: "models:common/Location"
+          DOB:
+            $ref: "#/definitions/DOB"
+          education:
+            type: array
+            items:
+              $ref: "#/definitions/Education"
+          jobs:
+            type: array
+            items:
+              $ref: "#/definitions/Job"
+          refs:
+            type: array
+            items:
+              $ref: "#/definitions/PersonReferal"
+    additionalProperties: false
+
+  Job:
+    type: object
+    properties:
+      company:
+        $ref: "models:object/ObjectRef"
+      roles:
+        type: array
+        items:
+          $ref: "#/definitions/Role"
+    additionalProperties: false
+
+  Role:
+    type: object
+    properties:
+      title:
+        type: string
+      accredited:
+        type: boolean
+      seniority:
+        $ref: "#/definitions/EnumSeniority"
+      role:
+        $ref: "#/definitions/EnumRole"
+      area:
+        $ref: "#/definitions/EnumArea"
+      start:
+        $ref: "models:common/Timestamp"
+      end:
+        $ref: "models:common/Timestamp"
+      current:
+        type: boolean
+      primary:
+        type: boolean
+    additionalProperties: false
+
+  PersonReferal:
+    type: object
+    properties:
+      ref:
+        $ref: "models:object/ObjectRef"
+      body:
+        type: string
+      source:
+        type: string
+      meta:
+        type: object
+    additionalProperties: false
+
+  EnumArea:
+    type: string
+    enum:
+      - UNKNOWN
+      - BOARD
+      - GENERAL_AND_ADMINISTRATIVE
+      - COMMUNICATIONS
+      - CONSULTING
+      - CUSTOMER_SERVICE
+      - EDUCATION
+      - ENGINEERING
+      - FINANCE
+      - HEALTH_PROFESSIONAL
+      - HUMAN_RESOURCES
+      - INFORMATION_TECHNOLOGY
+      - LEGAL
+      - MARKETING
+      - OPERATIONS
+      - PRODUCT
+      - PUBLIC_RELATIONS
+      - REAL_ESTATE
+      - RECRUITING
+      - RESEARCH
+      - SALES
+      - BUSINESS_DEVELOPMENT
+      - RESEARCH_AND_DEVELOPMENT
+
+  EnumRole:
+    type: string
+    enum:
+      - UNKNOWN
+      - CEO
+      - CFO
+      - COO
+      - CXO
+      - CDO
+      - CMO
+      - CRO
+      - CTO
+      - CIO
+      - CISO
+      - CPO
+      - CCO
+      - CSO
+      - CBO
+        #
+      - RND_MANAGER
+      - RND
+      - CHIEF_SCIENTIST
+      - CHIEF_ARCHITECT
+      - ARCHITECT
+      - ENGINEER
+      - DEVELOPER
+      - WEBSITE_MANAGER
+        #
+      - QA_MANAGER
+      - QA
+      - QA_ENGINEER
+        #
+      - SALES_MANAGER
+      - SALESPERSON
+        #
+      - MARKETING_MANAGER
+        #
+      - PRODUCT_MANAGER
+      - PRODUCT
+        #
+      - IT_MANAGER
+      - IT
+      - HEAD_DEVOPS
+      - DEVOPS
+        #
+      - PRESIDENT
+      - OFFICER
+        #
+      - SITE_MANAGER
+      - GENERAL_MANAGER
+        #
+      - BOARD_CHAIRMEN
+      - BOARD_MEMBER
+      - BOARD_ADVISOR
+      - BOARD_VIEWER
+        #
+      - IVESTOR
+      - FOUNDER
+      - OWNER
+
+  EnumSeniority:
+    type: string
+    enum:
+      - UNKNOWN
+      - NONE
+      - FOUNDER
+      - OWNER
+      - PRESIDENT
+      - C_LEVEL
+      - BOARD
+      - EVP
+      - SVP
+      - VP
+      - SENIOR_DIRECTOR
+      - DIRECTOR
+      - TEAM_LEADER
+      - SENIOR
+

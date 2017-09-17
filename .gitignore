@@ -16,8 +16,10 @@ parts/
 sdist/
 var/
 *.egg-info/
+.tox/
 .installed.cfg
 *.egg
+.cache/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template

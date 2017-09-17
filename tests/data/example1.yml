@@ -1,0 +1,27 @@
+##############################
+# DEFINITIONS #     
+definitions:
+  Error:
+    type: object
+    properties:
+      error:
+        type: string
+        description: "Error message"
+  LoginRequest:
+    type: object
+    properties:
+      email:
+        type: string
+        description: "user email"
+      session-type:
+        type: string
+        description: "session type"
+        example: "google"
+      session-id:
+        type: string
+        description: "session ID"
+        example: "13wdadfdfda34==42jklcjv231"
+      session-access-token:
+        type: string
+        description: "key for accessing user contacts. In google session it's 'access_token'"
+        example: "13wdadfdfda34==42jklcjv231"

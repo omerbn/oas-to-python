@@ -1,4 +1,5 @@
 # oas-to-python
+Master: [![Build Status](https://travis-ci.org/omerbn/oas-to-python.svg?branch=master)](https://travis-ci.org/omerbn/oas-to-python)
 Generating .py files with py-objects and validators based on OAS files (YAML and JSON)
 **Including references from other files!**
 *(Currently OAS2.0 is supported)*

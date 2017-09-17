@@ -18,8 +18,8 @@ def process_file(cmd_args):
     target_filename = _get_target_filename(cmd_args.filename, target_folder)
 
     # not overwriting existing file
-    if os.path.exists(target_filename) and not cmd_args.overwrite and not cmd_args.api_generate:
-        exit(0)
+    if os.path.exists(target_filename) and not cmd_args.overwrite:
+        return
 
     # template
     with codecs.open(os.path.join(os.path.dirname(__file__), 'template.tpl'), 'r', 'utf-8') as fd:
@@ -109,9 +109,6 @@ def process_file(cmd_args):
             # rendering template
             # fwd.write(template.tpl.render())
             template.stream(refs=refs, definitions=defs, sorted_definitions=sorted_defs).dump(fwd)
-
-            # if args.api_generate and False:
-            #    inject_into_api()
 
 
 def _get_target_filename(source_filename, target_folder):

@@ -23,20 +23,26 @@ class {{def_name}}(object):
         # CREATING OBJECT
         {{def_name}}._schema_pjs = scheme_for_pjs = json.loads("""{{def_value.schema_for_pjs}}""")
 
-        # RESOLVING LINKS
-        combined = {
+        # is this just a 'fork' of another class?
+        if '$ref' in scheme_for_pjs and scheme_for_pjs['$ref'].startswith('memory:'):
+            forked = eval(scheme_for_pjs['$ref'][7:])
+            {{def_name}}._cls = forked._cls
+            {{def_name}}._pjs_resolved = forked._pjs_resolved
+        else:
+            # RESOLVING LINKS
+            combined = {
+                {% for include_class in def_value.includes %}
+                    '{{include_class}}': {{include_class}}.schema_for_pjs(),
+                {% endfor %}
+            }
             {% for include_class in def_value.includes %}
-                '{{include_class}}': {{include_class}}.schema_for_pjs(),
+            combined = {**combined, **{{include_class}}.pjs_resolved()}
             {% endfor %}
-        }
-        {% for include_class in def_value.includes %}
-        combined = {**combined, **{{include_class}}.pjs_resolved()}
-        {% endfor %}
-        {{def_name}}._pjs_resolved = combined
+            {{def_name}}._pjs_resolved = combined
 
-        scheme_for_pjs['title'] = "test"
-        builder = pjs.ObjectBuilder(scheme_for_pjs, resolved=combined)
-        {{def_name}}._cls = getattr(builder.build_classes(), "Test")
+            scheme_for_pjs['title'] = "test"
+            builder = pjs.ObjectBuilder(scheme_for_pjs, resolved=combined)
+            {{def_name}}._cls = getattr(builder.build_classes(), "Test")
 
     @staticmethod
     def validate(data):

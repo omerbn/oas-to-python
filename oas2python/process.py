@@ -91,7 +91,9 @@ def process_file(cmd_args):
             defs[name] = {
                 'schema': json.dumps(schema_plain),
                 'schema_for_pjs': json.dumps(schema_for_pjs),
-                'includes': [k[k.rfind('/') + 1:] for k, v in includes.items()]
+                'includes': [k[k.rfind('/') + 1:] for k, v in includes.items()],
+                'enums': cl.enums if len(cl.enums) else None,
+                'enum': schema.get("enum", None)
             }
 
         # creating sorted defs
@@ -135,6 +137,7 @@ class RefCollector(object):
     def __init__(self):
         self.schemes = {}
         self.my_node = None
+        self.enums = {}
 
     @staticmethod
     def set_plain(clsname):
@@ -160,7 +163,11 @@ class RefCollector(object):
                         target_node = DepNode.get_node(nodes, clsname)
                         target_node.addDependee(self.my_node)
                 else:
-                    self._rec(v, handler, nodes)
+                    # is enum?
+                    if isinstance(v, dict) and v.get("enum", None):
+                        self.enums[k] = v.get("enum", None)
+                    else:
+                        self._rec(v, handler, nodes)
         elif isinstance(node, list):
             for x in node:
                 self._rec(x, handler, nodes)

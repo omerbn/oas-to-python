@@ -7,6 +7,7 @@ from {{value[0]}} import {{value[1]}}
 import jsonschema
 import json
 import python_jsonschema_objects as pjs
+from enum import Enum, auto
 
 {% for def_name, def_value in definitions.items() %}
 class {{def_name}}(object):
@@ -14,6 +15,29 @@ class {{def_name}}(object):
     _schema = None
     _schema_pjs = None
     _pjs_resolved = None
+
+    {% if def_value.enums %}
+    {% for enum_name, values in def_value.enums.items() %}
+    class Enum_{{enum_name}}(Enum):
+        {% for key in values %}
+        {{key}} = auto()
+        {% endfor %}
+
+        def __str__(self):
+            return str(self.name)
+    {% endfor %}
+    {% endif %}
+
+    {% if def_value.enum %}
+    class Enum_{{def_name}}(Enum):
+        {% for key in def_value.enum %}
+        {{key}} = auto()
+        {% endfor %}
+
+        def __str__(self):
+            return str(self.name)
+    {% endif %}
+
 
     @staticmethod
     def init():

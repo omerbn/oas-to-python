@@ -7,6 +7,9 @@ definitions:
       error:
         type: string
         description: "Error message"
+      temp:
+        type: string
+        enum: [ONE,TWO,THREE]
   LoginRequest:
     type: object
     properties:
@@ -25,3 +28,6 @@ definitions:
         type: string
         description: "key for accessing user contacts. In google session it's 'access_token'"
         example: "13wdadfdfda34==42jklcjv231"
+  MyEnum:
+    type: string
+    enum: [MY, YOUR]

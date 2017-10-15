@@ -43,3 +43,10 @@ def test_overwrite_code(datafiles):
     entrypoint_viacode(str(file))
 
     assert (time == os.path.getmtime(output_file))
+
+
+
+def tmptest():
+    output_file = "./data/example1.yml"
+    entrypoint_viacode(output_file, overwrite=True)
+tmptest()

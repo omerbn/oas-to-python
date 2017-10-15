@@ -70,7 +70,7 @@ class {{def_name}}(object):
 
     @staticmethod
     def validate(data):
-        jsonschema.validate(data, {{def_name}}._schema, resolver=_Resolver.get())
+        jsonschema.validate(data, {{def_name}}._schema, resolver=_Resolver())
 
     @staticmethod
     def schema():
@@ -88,24 +88,43 @@ class {{def_name}}(object):
     def get_object(*args):
         return {{def_name}}._cls(*args)
 
+    @staticmethod
+    def get_resolver_cls():
+        return _Resolver
+
+
 {% endfor %}
 class _Resolver(object):
-    _singleton = None
+    def __init__(self):
+        self._scopes = [self]
+        self._scope_index = 0
 
     def push_scope(self, scope):
-        return
+        self._scopes.append(scope)
+        self._scope_index += 1
 
     def pop_scope(self):
-        return
+        self._scopes.pop()
+        self._scope_index -= 1
 
     def resolve(self, ref):
-        return ref, eval(ref).schema()
+        resolver = self._scopes[self._scope_index]
 
-    @staticmethod
-    def get():
-        if not _Resolver._singleton:
-            _Resolver._singleton = _Resolver()
-        return _Resolver._singleton
+        # if current resolver is THIS instance:
+        # using this reference
+        if resolver == self:
+            cls = eval(ref)
+            resolver_class = cls.get_resolver_cls()
+
+            # resolver class is the same as this instance's class, thus cannot bring something new to the table
+            # Thus, not creating a new instance
+            if resolver_class == _Resolver:
+                return self, cls.schema()
+            else:
+                return resolver_class(), cls.schema()
+        else: # else: using the 'other' resolver
+            return resolver.resolve(ref)
+
 
 
 # initiating all classes

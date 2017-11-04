@@ -1,7 +1,6 @@
 from oas2python import __main__, entrypoint_viacode
 import sys
 import os
-from shutil import copyfile
 import pytest
 
 FIXTURE_DIR = os.path.join(
@@ -10,6 +9,7 @@ FIXTURE_DIR = os.path.join(
 )
 ALL_DATA_FILES = pytest.mark.datafiles(
     os.path.join(FIXTURE_DIR, 'example1.yml'),
+    os.path.join(FIXTURE_DIR, 'example2.yml'),
 )
 
 
@@ -45,8 +45,21 @@ def test_overwrite_code(datafiles):
     assert (time == os.path.getmtime(output_file))
 
 
+@ALL_DATA_FILES
+def test_overwrite_code_ex2_references(datafiles):
+    file = datafiles.listdir()[1]
+    output_file = os.path.join(str(datafiles), "compiled_example2.py")
+
+    entrypoint_viacode(str(file), overwrite=True)
+    time = os.path.getmtime(output_file)
+    entrypoint_viacode(str(file))
+
+    assert (time == os.path.getmtime(output_file))
+
 
 def tmptest():
     output_file = "./data/example1.yml"
-    entrypoint_viacode(output_file, overwrite=True)
+    entrypoint_viacode(output_file, overwrite=True, models_lib='acurerate_common')
+
+
 tmptest()

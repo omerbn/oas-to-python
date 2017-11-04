@@ -28,6 +28,13 @@ definitions:
         type: string
         description: "key for accessing user contacts. In google session it's 'access_token'"
         example: "13wdadfdfda34==42jklcjv231"
+      circ:
+        $ref: "#definitions/Include"
   MyEnum:
     type: string
     enum: [MY, YOUR]
+  Include:
+    type: object
+    properties:
+      y:
+        $ref: "#definitions/LoginRequest"

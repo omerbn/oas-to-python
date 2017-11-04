@@ -86,7 +86,7 @@ definitions:
     type: object
     properties:
       company:
-        $ref: "models:object/ObjectRef"
+        $ref: "#/definitions/Person"
       roles:
         type: array
         items:

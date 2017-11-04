@@ -75,42 +75,37 @@ def process_file(cmd_args):
 
         defs = api_file_dict.get('definitions', {})
         # sorted_defs = [name for name, schema in defs.items()]
-        global _nodes
-        nodes = [DepNode(name) for name, schema in defs.items()]
+        # global _nodes
+        # nodes = [DepNode(name) for name, schema in defs.items()]
         for name, schema in defs.items():
             import copy
 
             cl = RefCollector()
             schema_plain = copy.deepcopy(schema)
-            cl.start(schema_plain, RefCollector.set_plain, nodes, DepNode.get_node(nodes, name))
-            includes = cl.schemes
-
-            schema_for_pjs = copy.deepcopy(schema)
-            cl.start(schema_for_pjs, RefCollector.set_with_memory)
+            cl.start(schema_plain, RefCollector.set_plain)
+            # includes = cl.schemes
 
             defs[name] = {
                 'schema': json.dumps(schema_plain),
-                'schema_for_pjs': json.dumps(schema_for_pjs),
-                'includes': [k[k.rfind('/') + 1:] for k, v in includes.items()],
                 'enums': cl.enums if len(cl.enums) else None,
                 'enum': schema.get("enum", None)
             }
 
         # creating sorted defs
-        sorted_defs = []
-        while len(nodes):
+        # sorted_defs = []
+        """while len(nodes):
             for x in nodes:
                 if x.root == 0:
                     x.root = -1
                     sorted_defs.append(x.name)
                     for d in x.edges:
                         d.root -= 1
-            nodes = [x for x in nodes if x.root != -1]
+            nodes = [x for x in nodes if x.root != -1]"""
 
         with codecs.open(target_filename, 'w', 'utf-8') as fwd:
             # rendering template
             # fwd.write(template.tpl.render())
-            template.stream(refs=refs, definitions=defs, sorted_definitions=sorted_defs).dump(fwd)
+            template.stream(refs=refs, definitions=defs).dump(fwd)
 
 
 def _get_target_filename(source_filename, target_folder):

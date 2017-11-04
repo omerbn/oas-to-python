@@ -6,17 +6,17 @@ from {{value[0]}} import {{value[1]}}
 {% endfor %}
 import jsonschema
 import json
-import python_jsonschema_objects as pjs
+import python_jsonschema_objects.classbuilder as classbuilder
+import contextlib
 from enum import Enum, auto
 
 {% for def_name, def_value in definitions.items() %}
 class {{def_name}}(object):
     _cls = None
     _schema = None
-    _schema_pjs = None
-    _pjs_resolved = None
 
     {% if def_value.enums %}
+    # inline in-depth enums
     {% for enum_name, values in def_value.enums.items() %}
     class Enum_{{enum_name}}(Enum):
         {% for key in values %}
@@ -29,6 +29,7 @@ class {{def_name}}(object):
     {% endif %}
 
     {% if def_value.enum %}
+    # class is an enum
     class Enum_{{def_name}}(Enum):
         {% for key in def_value.enum %}
         {{key}} = auto()
@@ -40,33 +41,27 @@ class {{def_name}}(object):
 
 
     @staticmethod
-    def init():
+    def register():
         # SAVING SCHEME
         {{def_name}}._schema = json.loads("""{{def_value.schema}}""")
 
-        # CREATING OBJECT
-        {{def_name}}._schema_pjs = scheme_for_pjs = json.loads("""{{def_value.schema_for_pjs}}""")
+        # REGISTERING IN GLOBAL
+        _RESOLVED_PJS["{{def_name}}"] = {{def_name}}._schema
+
+    @staticmethod
+    def init():
+        scheme_for_pjs = {{def_name}}._schema
 
         # is this just a 'fork' of another class?
-        if '$ref' in scheme_for_pjs and scheme_for_pjs['$ref'].startswith('memory:'):
+        if '$ref' in scheme_for_pjs:
             forked = eval(scheme_for_pjs['$ref'][7:])
             {{def_name}}._cls = forked._cls
-            {{def_name}}._pjs_resolved = forked._pjs_resolved
         else:
-            # RESOLVING LINKS
-            combined = {
-                {% for include_class in def_value.includes %}
-                    '{{include_class}}': {{include_class}}.schema_for_pjs(),
-                {% endfor %}
-            }
-            {% for include_class in def_value.includes %}
-            combined = {**combined, **{{include_class}}.pjs_resolved()}
-            {% endfor %}
-            {{def_name}}._pjs_resolved = combined
-
             scheme_for_pjs['title'] = "test"
-            builder = pjs.ObjectBuilder(scheme_for_pjs, resolved=combined)
-            {{def_name}}._cls = getattr(builder.build_classes(), "Test")
+
+            builder = classbuilder.ClassBuilder(_Resolver())
+            builder.construct("{{def_name}}", scheme_for_pjs, **{"strict": False})
+            {{def_name}}._cls = builder.resolved["{{def_name}}"]
 
     @staticmethod
     def validate(data):
@@ -77,14 +72,6 @@ class {{def_name}}(object):
         return {{def_name}}._schema
 
     @staticmethod
-    def schema_for_pjs():
-        return {{def_name}}._schema_pjs
-
-    @staticmethod
-    def pjs_resolved():
-        return {{def_name}}._pjs_resolved
-
-    @staticmethod
     def get_object(*args):
         return {{def_name}}._cls(*args)
 
@@ -92,8 +79,8 @@ class {{def_name}}(object):
     def get_resolver_cls():
         return _Resolver
 
-
 {% endfor %}
+
 class _Resolver(object):
     def __init__(self):
         self._scopes = [self]
@@ -125,9 +112,45 @@ class _Resolver(object):
         else: # else: using the 'other' resolver
             return resolver.resolve(ref)
 
+    @contextlib.contextmanager
+    def resolving(self, ref):
+        """
+        Context manager which resolves a JSON ``ref`` and enters the
+        resolution scope of this ref.
 
+        Arguments:
+
+            ref (str):
+
+                The reference to resolve
+
+        """
+
+        url, resolved = self.resolve(ref)
+        self.push_scope(url)
+        try:
+            yield resolved
+        finally:
+            self.pop_scope()
+
+    @property
+    def resolution_scope(*p, **kwargs):
+        return ""
+
+
+# global 'resolved'
+_RESOLVED_PJS = {
+{% for key, value in refs.items() %}
+    "{{value[1]}}": {{value[1]}}.schema(),
+{% endfor %}
+}
+
+# registering all classes
+{% for def_name, def_value in definitions.items() %}
+{{def_name}}.register()
+{% endfor %}
 
 # initiating all classes
-{% for def in sorted_definitions %}
-{{def}}.init()
+{% for def_name, def_value in definitions.items() %}
+{{def_name}}.init()
 {% endfor %}

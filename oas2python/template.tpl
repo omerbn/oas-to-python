@@ -8,6 +8,7 @@ import jsonschema
 import json
 import python_jsonschema_objects.classbuilder as classbuilder
 import contextlib
+from copy import deepcopy
 from enum import Enum, auto
 
 
@@ -107,7 +108,7 @@ class {{def_name}}(object):
 
     @staticmethod
     def init():
-        scheme_for_pjs = {{def_name}}._schema
+        scheme_for_pjs = deepcopy({{def_name}}._schema)
 
         # is this just a 'fork' of another class?
         if '$ref' in scheme_for_pjs:

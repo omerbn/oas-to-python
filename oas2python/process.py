@@ -10,7 +10,7 @@ from jinja2 import Template
 def process_file(cmd_args):
     # target folder
     if cmd_args.target_folder:
-        target_folder = os.path.abspath(os.path.dirname(cmd_args.target_folder))
+        target_folder = os.path.abspath(cmd_args.target_folder)
     else:
         target_folder = os.path.abspath(os.path.dirname(cmd_args.filename))
 

@@ -54,7 +54,7 @@ class {{def_name}}(object):
 
         # is this just a 'fork' of another class?
         if '$ref' in scheme_for_pjs:
-            forked = eval(scheme_for_pjs['$ref'][7:])
+            forked = eval(scheme_for_pjs['$ref'])
             {{def_name}}._cls = forked._cls
         else:
             scheme_for_pjs['title'] = "test"

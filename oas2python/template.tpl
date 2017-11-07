@@ -103,7 +103,7 @@ class {{def_name}}(object):
         {{def_name}}._schema = json.loads("""{{def_value.schema}}""")
 
         # REGISTERING IN GLOBAL
-        _RESOLVED_PJS["{{def_name}}"] = {{def_name}}._schema
+        _RESOLVED["{{def_name}}"] = {{def_name}}
 
     @staticmethod
     def init():
@@ -127,7 +127,7 @@ class {{def_name}}(object):
 
     @staticmethod
     def schema():
-        return {{def_name}}._schema
+        return deepcopy({{def_name}}._schema)
 
     @staticmethod
     def complied_schema():
@@ -145,7 +145,6 @@ class {{def_name}}(object):
 
 
 # global 'resolved'
-_RESOLVED_PJS = {}
 _RESOLVED = {}
 
 # builder
@@ -155,13 +154,11 @@ BUILDER = classbuilder.ClassBuilder(_Resolver())
 # registering all classes
 {% for def_name, def_value in definitions.items() %}
 {{def_name}}.register()
-_RESOLVED["{{def_name}}"] = {{def_name}}
 {% endfor %}
 
 # registering imports
 {% for key, value in refs.items() %}
 from {{value[0]}} import {{value[1]}}
-_RESOLVED_PJS["{{value[1]}}"] = {{value[1]}}.schema()
 _RESOLVED["{{value[1]}}"] = {{value[1]}}
 {% endfor %}
 

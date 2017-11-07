@@ -1,9 +1,5 @@
 # -*- coding: utf-8 -*-
 
-# imports
-{% for key, value in refs.items() %}
-from {{value[0]}} import {{value[1]}}
-{% endfor %}
 import jsonschema
 import json
 import python_jsonschema_objects.classbuilder as classbuilder
@@ -72,6 +68,7 @@ class _Resolver(object):
 class {{def_name}}(object):
     _cls = None
     _schema = None
+    _compiled_schema = None
 
     {% if def_value.enums %}
     # inline in-depth enums
@@ -114,11 +111,13 @@ class {{def_name}}(object):
         if '$ref' in scheme_for_pjs:
             forked = eval(scheme_for_pjs['$ref'])
             {{def_name}}._cls = forked._cls
+            {{def_name}}._compiled_schema = forked._compiled_schema
         else:
             scheme_for_pjs['title'] = "test"
 
             BUILDER.construct("{{def_name}}", scheme_for_pjs, **{"strict": False})
             {{def_name}}._cls = BUILDER.resolved["{{def_name}}"]
+            {{def_name}}._compiled_schema = scheme_for_pjs
 
     @staticmethod
     def validate(data):
@@ -127,6 +126,10 @@ class {{def_name}}(object):
     @staticmethod
     def schema():
         return {{def_name}}._schema
+
+    @staticmethod
+    def complied_schema():
+        return {{def_name}}._compiled_schema
 
     @staticmethod
     def get_object(*args):
@@ -140,11 +143,7 @@ class {{def_name}}(object):
 
 
 # global 'resolved'
-_RESOLVED_PJS = {
-{% for key, value in refs.items() %}
-    "{{value[1]}}": {{value[1]}}.schema(),
-{% endfor %}
-}
+_RESOLVED_PJS = {}
 
 # builder
 BUILDER = classbuilder.ClassBuilder(_Resolver())
@@ -153,6 +152,12 @@ BUILDER = classbuilder.ClassBuilder(_Resolver())
 # registering all classes
 {% for def_name, def_value in definitions.items() %}
 {{def_name}}.register()
+{% endfor %}
+
+# registering imports
+{% for key, value in refs.items() %}
+from {{value[0]}} import {{value[1]}}
+_RESOLVED_PJS["{{value[1]}}"] = {{value[1]}}.schema()
 {% endfor %}
 
 # initiating all classes

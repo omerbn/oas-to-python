@@ -22,12 +22,9 @@ class _Resolver(object):
         self._scope_index -= 1
 
     def resolve(self, ref):
-        resolver = self._scopes[self._scope_index]
-
-        # if current resolver is THIS instance:
-        # using this reference
-        if resolver == self:
-            cls = eval(ref)
+        # trying to resolve with THIS instance:
+        if ref in _RESOLVED:
+            cls = _RESOLVED[ref]
             resolver_class = cls.get_resolver_cls()
 
             # resolver class is the same as this instance's class, thus cannot bring something new to the table
@@ -36,8 +33,13 @@ class _Resolver(object):
                 return self, cls.schema()
             else:
                 return resolver_class(), cls.schema()
-        else: # else: using the 'other' resolver
-            return resolver.resolve(ref)
+        else:
+            # using resolver in pipe
+            resolver = self._scopes[self._scope_index]
+            if resolver == self:
+                return None,None
+            else:
+                return resolver.resolve(ref)
 
     @contextlib.contextmanager
     def resolving(self, ref):
@@ -144,6 +146,7 @@ class {{def_name}}(object):
 
 # global 'resolved'
 _RESOLVED_PJS = {}
+_RESOLVED = {}
 
 # builder
 BUILDER = classbuilder.ClassBuilder(_Resolver())
@@ -152,12 +155,14 @@ BUILDER = classbuilder.ClassBuilder(_Resolver())
 # registering all classes
 {% for def_name, def_value in definitions.items() %}
 {{def_name}}.register()
+_RESOLVED["{{def_name}}"] = {{def_name}}
 {% endfor %}
 
 # registering imports
 {% for key, value in refs.items() %}
 from {{value[0]}} import {{value[1]}}
 _RESOLVED_PJS["{{value[1]}}"] = {{value[1]}}.schema()
+_RESOLVED["{{value[1]}}"] = {{value[1]}}
 {% endfor %}
 
 # initiating all classes

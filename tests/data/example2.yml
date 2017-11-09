@@ -18,8 +18,6 @@ definitions:
     properties:
         text:
           type: string
-        institute:
-          $ref: "models:object/ObjectRef"
         field:
           type: string
         start:
@@ -86,7 +84,7 @@ definitions:
     type: object
     properties:
       company:
-        $ref: "#/definitions/Person"
+        $ref: "models:organization/Organization"
       roles:
         type: array
         items:
@@ -119,8 +117,6 @@ definitions:
   PersonReferal:
     type: object
     properties:
-      ref:
-        $ref: "models:object/ObjectRef"
       body:
         type: string
       source:

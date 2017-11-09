@@ -58,8 +58,8 @@ def test_overwrite_code_ex2_references(datafiles):
 
 
 def tmptest():
-    output_file = "./data/example1.yml"
-    entrypoint_viacode(output_file, overwrite=True, models_lib='acurerate_common')
+    output_file = "./data/example2.yml"
+    entrypoint_viacode(output_file, overwrite=True, models_lib='acurerate_common.models')
 
 
 tmptest()

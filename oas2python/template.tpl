@@ -107,6 +107,12 @@ class {{def_name}}(object):
 
     @staticmethod
     def init():
+        # registering imports
+        {% for key, value in refs.items() %}
+        from {{value[0]}} import {{value[1]}}
+        _RESOLVED["{{value[1]}}"] = {{value[1]}}
+        {% endfor %}
+
         scheme_for_pjs = deepcopy({{def_name}}._schema)
 
         # is this just a 'fork' of another class?
@@ -154,12 +160,6 @@ BUILDER = classbuilder.ClassBuilder(_Resolver())
 # registering all classes
 {% for def_name, def_value in definitions.items() %}
 {{def_name}}.register()
-{% endfor %}
-
-# registering imports
-{% for key, value in refs.items() %}
-from {{value[0]}} import {{value[1]}}
-_RESOLVED["{{value[1]}}"] = {{value[1]}}
 {% endfor %}
 
 # initiating all classes

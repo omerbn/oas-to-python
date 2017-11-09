@@ -168,8 +168,3 @@ BUILDER = classbuilder.ClassBuilder(_Resolver())
 from {{value[0]}} import {{value[1]}}
 _RESOLVED["{{value[1]}}"] = {{value[1]}}
 {% endfor %}
-
-# initiating all classes
-{% for def_name, def_value in definitions.items() %}
-{{def_name}}.init()
-{% endfor %}

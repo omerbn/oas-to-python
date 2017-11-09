@@ -167,6 +167,10 @@ class {{def_name}}(object):
         return {{def_name}}._cls(*args)
 
     @staticmethod
+    def cls():
+        return {{def_name}}._cls
+
+    @staticmethod
     def get_resolver_cls():
         return _Resolver
 

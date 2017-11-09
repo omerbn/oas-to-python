@@ -126,6 +126,27 @@ class {{def_name}}(object):
             {{def_name}}._cls = BUILDER.resolved["{{def_name}}"]
             {{def_name}}._compiled_schema = scheme_for_pjs
 
+            ## SETTING REFERENCES FROM ARRAY ITEMS TO CLASSES
+            def rec_dict(d: dict, is_prop):
+                if not is_prop:
+                    t = d.get('type', None)
+                    if t:
+                        if t == 'object':
+                            p = d.get('properties', None)
+                            if p:
+                                rec_dict(p, True)
+                        elif t == 'array':
+                            i = d.get('items', None)
+                            if i:
+                                iref = i.get('$ref', None)
+                                if iref:
+                                    i['type'] = _RESOLVED[iref]._cls
+                else:
+                    for k, v in d.items():
+                        rec_dict(v, False)
+
+            rec_dict(scheme_for_pjs, False)
+
     @staticmethod
     def validate(data):
         jsonschema.validate(data, {{def_name}}._schema, resolver=_Resolver())

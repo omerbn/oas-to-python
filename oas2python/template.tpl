@@ -71,6 +71,7 @@ class {{def_name}}(object):
     _cls = None
     _schema = None
     _compiled_schema = None
+    _initiated = False
 
     {% if def_value.enums %}
     # inline in-depth enums
@@ -107,11 +108,9 @@ class {{def_name}}(object):
 
     @staticmethod
     def init():
-        # registering imports
-        {% for key, value in refs.items() %}
-        from {{value[0]}} import {{value[1]}}
-        _RESOLVED["{{value[1]}}"] = {{value[1]}}
-        {% endfor %}
+        if {{def_name}}._initiated:
+            return
+        {{def_name}}._initiated = True
 
         scheme_for_pjs = deepcopy({{def_name}}._schema)
 
@@ -133,14 +132,17 @@ class {{def_name}}(object):
 
     @staticmethod
     def schema():
+        {{def_name}}.init()
         return deepcopy({{def_name}}._schema)
 
     @staticmethod
     def complied_schema():
+        {{def_name}}.init()
         return {{def_name}}._compiled_schema
 
     @staticmethod
     def get_object(*args):
+        {{def_name}}.init()
         return {{def_name}}._cls(*args)
 
     @staticmethod
@@ -156,10 +158,15 @@ _RESOLVED = {}
 # builder
 BUILDER = classbuilder.ClassBuilder(_Resolver())
 
-
 # registering all classes
 {% for def_name, def_value in definitions.items() %}
 {{def_name}}.register()
+{% endfor %}
+
+# registering imports
+{% for key, value in refs.items() %}
+from {{value[0]}} import {{value[1]}}
+_RESOLVED["{{value[1]}}"] = {{value[1]}}
 {% endfor %}
 
 # initiating all classes

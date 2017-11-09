@@ -1,6 +1,6 @@
 from distutils.core import setup
 
-version = '0.16'
+version = '0.17'
 
 setup(
     name='oas-to-python',

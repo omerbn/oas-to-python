@@ -110,7 +110,7 @@ class {{def_name}}(object):
     @staticmethod
     def init():
         if {{def_name}}._initiated:
-            if {{def_name}}._unresolved_refes and Acquirer_Org.fill_refs({{def_name}}._compiled_schema, False):
+            if {{def_name}}._unresolved_refes and {{def_name}}.fill_refs({{def_name}}._compiled_schema, False):
                 {{def_name}}._unresolved_refes = False
             return
         {{def_name}}._initiated = True

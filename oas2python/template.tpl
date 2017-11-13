@@ -72,6 +72,7 @@ class {{def_name}}(object):
     _schema = None
     _compiled_schema = None
     _initiated = False
+    _unresolved_refes = False
 
     {% if def_value.enums %}
     # inline in-depth enums
@@ -109,6 +110,8 @@ class {{def_name}}(object):
     @staticmethod
     def init():
         if {{def_name}}._initiated:
+            if {{def_name}}._unresolved_refes and Acquirer_Org.fill_refs({{def_name}}._compiled_schema, False):
+                {{def_name}}._unresolved_refes = False
             return
         {{def_name}}._initiated = True
 
@@ -127,25 +130,38 @@ class {{def_name}}(object):
             {{def_name}}._compiled_schema = scheme_for_pjs
 
             ## SETTING REFERENCES FROM ARRAY ITEMS TO CLASSES
-            def rec_dict(d: dict, is_prop):
-                if not is_prop:
-                    t = d.get('type', None)
-                    if t:
-                        if t == 'object':
-                            p = d.get('properties', None)
-                            if p:
-                                rec_dict(p, True)
-                        elif t == 'array':
-                            i = d.get('items', None)
-                            if i:
-                                iref = i.get('$ref', None)
-                                if iref:
-                                    i['type'] = _RESOLVED[iref]._cls
-                else:
-                    for k, v in d.items():
-                        rec_dict(v, False)
+            if not {{def_name}}.fill_refs(scheme_for_pjs, False):
+                {{def_name}}._unresolved_refes = True
 
-            rec_dict(scheme_for_pjs, False)
+    @staticmethod
+    def fill_refs(d: dict, is_prop):
+        if not is_prop:
+            t = d.get('type', None)
+            r = d.get('$ref', None)
+            if t:
+                if t == 'object':
+                    p = d.get('properties', None)
+                    if p:
+                        if not {{def_name}}.fill_refs(p, True):
+                            return False
+                elif t == 'array':
+                    i = d.get('items', None)
+                    if i:
+                        iref = i.get('$ref', None)
+                        if iref:
+                            i['type'] = _RESOLVED[iref]._cls
+            elif r:  # here we have $ref without type reference
+                t = _RESOLVED[r]._cls
+                if not t:
+                    return False
+                d['type'] = t
+                {{def_name}}._unresolved_refes = True
+        else:
+            for k, v in d.items():
+                if not {{def_name}}.fill_refs(v, False):
+                    return False
+
+        return True
 
     @staticmethod
     def validate(data):
@@ -159,7 +175,7 @@ class {{def_name}}(object):
     @staticmethod
     def complied_schema():
         {{def_name}}.init()
-        return {{def_name}}._compiled_schema
+        return deepcopy({{def_name}}._compiled_schema)
 
     @staticmethod
     def get_object(*args):

@@ -135,6 +135,8 @@ class {{def_name}}(object):
 
     @staticmethod
     def fill_refs(d: dict, is_prop):
+        from abc import ABCMeta
+
         if not is_prop:
             t = d.get('type', None)
             r = d.get('$ref', None)
@@ -149,7 +151,21 @@ class {{def_name}}(object):
                     if i:
                         iref = i.get('$ref', None)
                         if iref:
-                            i['type'] = _RESOLVED[iref]._cls
+                            t = _RESOLVED[iref]._cls
+                            if not t:
+                                return False
+                            else:
+                                i['type'] = t
+                elif isinstance(t, ABCMeta):
+                    ap = d.get('additionalProperties', None)
+                    iref = ap.get('$ref', None) if ap else None
+                    if iref:
+                        t = _RESOLVED[iref]._cls
+                        if not t:
+                            return False
+                        else:
+                            ap['type'] = t
+
             elif r:  # here we have $ref without type reference
                 t = _RESOLVED[r]._cls
                 if not t:

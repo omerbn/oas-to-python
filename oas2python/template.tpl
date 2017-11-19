@@ -132,10 +132,10 @@ class {{def_name}}(object):
 
             BUILDER.construct("{{def_name}}", scheme_for_pjs, **{"strict": False})
             {{def_name}}._cls = BUILDER.resolved["{{def_name}}"]
-            {{def_name}}._compiled_schema = scheme_for_pjs
+            {{def_name}}._compiled_schema = copyof = deepcopy(scheme_for_pjs)
 
             # SETTING REFERENCES FROM ARRAY ITEMS TO CLASSES ###
-            if not {{def_name}}.fill_refs(scheme_for_pjs, False):
+            if not {{def_name}}.fill_refs(copyof, False):
                 {{def_name}}._unresolved_refes = True
 
 
@@ -164,6 +164,7 @@ class {{def_name}}(object):
                                 return False
                             else:
                                 i['type'] = t
+                                i['wrapper_ref'] = _RESOLVED[iref]
                                 if _RESOLVED[iref]._is_enum:
                                     i['enum'] = eval(iref + ".Enum_" + iref)
                 # map
@@ -176,21 +177,24 @@ class {{def_name}}(object):
                             return False
                         else:
                             ap['type'] = t
+                            ap['wrapper_ref'] = _RESOLVED[iref]
                             if _RESOLVED[iref]._is_enum:
                                 ap['enum'] = eval(iref + ".Enum_" + iref)
+
                 # enum
                 elif r and _RESOLVED[r]._is_enum:
                     d['enum'] = eval(r + ".Enum_" + r)
-
-
+                    d['wrapper_ref'] = _RESOLVED[r]
 
             elif r:  # here we have $ref without type reference
                 t = _RESOLVED[r]._cls
                 if not t:
                     return False
                 d['type'] = t
+                d['wrapper_ref'] = _RESOLVED[r]
                 if _RESOLVED[r]._is_enum:
                     d['enum'] = eval(r + ".Enum_" + r)
+
         else:
             for k, v in d.items():
                 if not {{def_name}}.fill_refs(v, False):

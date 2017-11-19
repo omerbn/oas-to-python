@@ -62,8 +62,8 @@ def tmptest():
     entrypoint_viacode(output_file, overwrite=True, models_lib='acurerate_common.models')
 
 
-    from data.compiled_example2 import Person
-    print(Person.complied_schema())
+    #from data.compiled_example2 import Person
+    #print(Person.complied_schema())
 
 
 

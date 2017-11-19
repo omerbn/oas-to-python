@@ -73,6 +73,11 @@ class {{def_name}}(object):
     _compiled_schema = None
     _initiated = False
     _unresolved_refes = False
+    {% if def_value.enum %}
+    _is_enum = True
+    {% else %}
+    _is_enum = False
+    {% endif %}
 
     {% if def_value.enums %}
     # inline in-depth enums
@@ -129,9 +134,10 @@ class {{def_name}}(object):
             {{def_name}}._cls = BUILDER.resolved["{{def_name}}"]
             {{def_name}}._compiled_schema = scheme_for_pjs
 
-            ## SETTING REFERENCES FROM ARRAY ITEMS TO CLASSES
+            # SETTING REFERENCES FROM ARRAY ITEMS TO CLASSES ###
             if not {{def_name}}.fill_refs(scheme_for_pjs, False):
                 {{def_name}}._unresolved_refes = True
+
 
     @staticmethod
     def fill_refs(d: dict, is_prop):
@@ -141,11 +147,13 @@ class {{def_name}}(object):
             t = d.get('type', None)
             r = d.get('$ref', None)
             if t:
+                # object
                 if t == 'object':
                     p = d.get('properties', None)
                     if p:
                         if not {{def_name}}.fill_refs(p, True):
                             return False
+                # array
                 elif t == 'array':
                     i = d.get('items', None)
                     if i:
@@ -156,6 +164,9 @@ class {{def_name}}(object):
                                 return False
                             else:
                                 i['type'] = t
+                                if _RESOLVED[iref]._is_enum:
+                                    i['enum'] = eval(iref + ".Enum_" + iref)
+                # map
                 elif isinstance(t, ABCMeta):
                     ap = d.get('additionalProperties', None)
                     iref = ap.get('$ref', None) if ap else None
@@ -165,13 +176,21 @@ class {{def_name}}(object):
                             return False
                         else:
                             ap['type'] = t
+                            if _RESOLVED[iref]._is_enum:
+                                ap['enum'] = eval(iref + ".Enum_" + iref)
+                # enum
+                elif r and _RESOLVED[r]._is_enum:
+                    d['enum'] = eval(r + ".Enum_" + r)
+
+
 
             elif r:  # here we have $ref without type reference
                 t = _RESOLVED[r]._cls
                 if not t:
                     return False
                 d['type'] = t
-                {{def_name}}._unresolved_refes = True
+                if _RESOLVED[r]._is_enum:
+                    d['enum'] = eval(r + ".Enum_" + r)
         else:
             for k, v in d.items():
                 if not {{def_name}}.fill_refs(v, False):

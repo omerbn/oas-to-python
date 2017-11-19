@@ -33,51 +33,50 @@ definitions:
 
   Person:
     title: Acurerate Person Object
-    allOf:
-      - $ref: "models:object/Object"
-      - properties:
-          gender:
-            $ref: "#/definitions/Gender"
-          first_name:
-            type: string
-          last_name:
-            type: string
-          middle_name:
-            type: string
-          full_name:
-            type: string
-          phones:
-            type: array
-            items:
-              type: string
-          photos:
-            type: array
-            items:
-              $ref: "models:common/Photo"
-          business_reason:
-            type: string # maybe redundant?
-          social:
-            type: array
-            items:
-              $ref: "models:common/Social"
-          addresses:
-            type: array
-            items:
-              $ref: "models:common/Location"
-          DOB:
-            $ref: "#/definitions/DOB"
-          education:
-            type: array
-            items:
-              $ref: "#/definitions/Education"
-          jobs:
-            type: array
-            items:
-              $ref: "#/definitions/Job"
-          refs:
-            type: array
-            items:
-              $ref: "#/definitions/PersonReferal"
+    type: object
+    properties:
+      gender:
+        $ref: "#/definitions/Gender"
+      first_name:
+        type: string
+      last_name:
+        type: string
+      middle_name:
+        type: string
+      full_name:
+        type: string
+      phones:
+        type: array
+        items:
+          type: string
+      photos:
+        type: array
+        items:
+          $ref: "models:common/Photo"
+      business_reason:
+        type: string # maybe redundant?
+      social:
+        type: array
+        items:
+          $ref: "models:common/Social"
+      addresses:
+        type: array
+        items:
+          $ref: "models:common/Location"
+      DOB:
+        $ref: "#/definitions/DOB"
+      education:
+        type: array
+        items:
+          $ref: "#/definitions/Education"
+      jobs:
+        type: array
+        items:
+          $ref: "#/definitions/Job"
+      refs:
+        type: array
+        items:
+          $ref: "#/definitions/PersonReferal"
     additionalProperties: false
 
   Job:

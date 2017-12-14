@@ -66,8 +66,75 @@ class _Resolver(object):
     def resolution_scope(*p, **kwargs):
         return ""
 
+
+class _BaseCls(object):
+    @staticmethod
+    def fill_refs(d: dict, is_prop):
+        from abc import ABCMeta
+
+        if not is_prop:
+            t = d.get('type', None)
+            r = d.get('$ref', None)
+            if t:
+                # object
+                if t == 'object':
+                    p = d.get('properties', None)
+                    if p:
+                        if not _BaseCls.fill_refs(p, True):
+                            return False
+                # array
+                elif t == 'array':
+                    i = d.get('items', None)
+                    if i:
+                        iref = i.get('$ref', None)
+                        if iref:
+                            t = _RESOLVED[iref]._cls
+                            if not t:
+                                return False
+                            else:
+                                i['type'] = t
+                                i['wrapper_ref'] = _RESOLVED[iref]
+                                if _RESOLVED[iref]._is_enum:
+                                    i['enum'] = eval(iref + ".Enum_" + iref)
+                # map
+                elif isinstance(t, ABCMeta):
+                    ap = d.get('additionalProperties', {})
+                    if isinstance(ap, dict):
+                        iref = ap.get('$ref', None) if ap else None
+                        if iref:
+                            t = _RESOLVED[iref]._cls
+                            if not t:
+                                return False
+                            else:
+                                ap['type'] = t
+                                ap['wrapper_ref'] = _RESOLVED[iref]
+                                if _RESOLVED[iref]._is_enum:
+                                    ap['enum'] = eval(iref + ".Enum_" + iref)
+
+                # enum
+                elif r and _RESOLVED[r]._is_enum:
+                    d['enum'] = eval(r + ".Enum_" + r)
+                    d['wrapper_ref'] = _RESOLVED[r]
+
+            elif r:  # here we have $ref without type reference
+                t = _RESOLVED[r]._cls
+                if not t:
+                    return False
+                d['type'] = t
+                d['wrapper_ref'] = _RESOLVED[r]
+                if _RESOLVED[r]._is_enum:
+                    d['enum'] = eval(r + ".Enum_" + r)
+
+        else:
+            for k, v in d.items():
+                if not _BaseCls.fill_refs(v, False):
+                    return False
+
+        return True
+
+
 {% for def_name, def_value in definitions.items() %}
-class {{def_name}}(object):
+class {{def_name}}(_BaseCls):
     _cls = None
     _schema = None
     _compiled_schema = None
@@ -115,7 +182,7 @@ class {{def_name}}(object):
     @staticmethod
     def init():
         if {{def_name}}._initiated:
-            if {{def_name}}._unresolved_refes and {{def_name}}.fill_refs({{def_name}}._compiled_schema, False):
+            if {{def_name}}._unresolved_refes and _BaseCls.fill_refs({{def_name}}._compiled_schema, False):
                 {{def_name}}._unresolved_refes = False
             return
         {{def_name}}._initiated = True
@@ -135,72 +202,8 @@ class {{def_name}}(object):
             {{def_name}}._compiled_schema = copyof = deepcopy(scheme_for_pjs)
 
             # SETTING REFERENCES FROM ARRAY ITEMS TO CLASSES ###
-            if not {{def_name}}.fill_refs(copyof, False):
+            if not _BaseCls.fill_refs(copyof, False):
                 {{def_name}}._unresolved_refes = True
-
-
-    @staticmethod
-    def fill_refs(d: dict, is_prop):
-        from abc import ABCMeta
-
-        if not is_prop:
-            t = d.get('type', None)
-            r = d.get('$ref', None)
-            if t:
-                # object
-                if t == 'object':
-                    p = d.get('properties', None)
-                    if p:
-                        if not {{def_name}}.fill_refs(p, True):
-                            return False
-                # array
-                elif t == 'array':
-                    i = d.get('items', None)
-                    if i:
-                        iref = i.get('$ref', None)
-                        if iref:
-                            t = _RESOLVED[iref]._cls
-                            if not t:
-                                return False
-                            else:
-                                i['type'] = t
-                                i['wrapper_ref'] = _RESOLVED[iref]
-                                if _RESOLVED[iref]._is_enum:
-                                    i['enum'] = eval(iref + ".Enum_" + iref)
-                # map
-                elif isinstance(t, ABCMeta):
-                    ap = d.get('additionalProperties', {})
-                    iref = ap.get('$ref', None) if ap else None
-                    if iref:
-                        t = _RESOLVED[iref]._cls
-                        if not t:
-                            return False
-                        else:
-                            ap['type'] = t
-                            ap['wrapper_ref'] = _RESOLVED[iref]
-                            if _RESOLVED[iref]._is_enum:
-                                ap['enum'] = eval(iref + ".Enum_" + iref)
-
-                # enum
-                elif r and _RESOLVED[r]._is_enum:
-                    d['enum'] = eval(r + ".Enum_" + r)
-                    d['wrapper_ref'] = _RESOLVED[r]
-
-            elif r:  # here we have $ref without type reference
-                t = _RESOLVED[r]._cls
-                if not t:
-                    return False
-                d['type'] = t
-                d['wrapper_ref'] = _RESOLVED[r]
-                if _RESOLVED[r]._is_enum:
-                    d['enum'] = eval(r + ".Enum_" + r)
-
-        else:
-            for k, v in d.items():
-                if not {{def_name}}.fill_refs(v, False):
-                    return False
-
-        return True
 
     @staticmethod
     def validate(data):

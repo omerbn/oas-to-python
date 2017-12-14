@@ -169,7 +169,7 @@ class {{def_name}}(object):
                                     i['enum'] = eval(iref + ".Enum_" + iref)
                 # map
                 elif isinstance(t, ABCMeta):
-                    ap = d.get('additionalProperties', None)
+                    ap = d.get('additionalProperties', {})
                     iref = ap.get('$ref', None) if ap else None
                     if iref:
                         t = _RESOLVED[iref]._cls
